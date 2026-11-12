@@ -4,37 +4,36 @@
 
 @layer base {
   :root {
-    /* Fleet Panel — professional dark ops console
-       near-black charcoal ground, elevated neutral surfaces, one mint accent */
-    --background: 0 0% 4%;           /* #0a0a0a */
-    --foreground: 0 0% 96%;          /* #f5f5f5 */
-    --card: 0 0% 8%;                 /* #141414 */
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 161 100% 43%;         /* mint #00d9a3 */
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 10%;           /* #1a1a1a */
-    --secondary-foreground: 0 0% 96%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 220 9% 64%;  /* #9ca3af */
-    --accent: 161 100% 43%;
-    --accent-foreground: 0 0% 4%;
-    --destructive: 0 72% 62%;        /* #e5484d-ish */
-    --destructive-foreground: 0 0% 98%;
-    --warning: 38 92% 55%;           /* amber */
-    --border: 0 0% 15%;              /* #262626 — depth via contrast, not color */
-    --input: 0 0% 15%;
-    --ring: 161 100% 43%;
+    /* Fleet Panel — light, Render-style professional console */
+    --background: 240 11% 98%;       /* #f7f8fa */
+    --foreground: 240 27% 8%;        /* #0d0c22 */
+    --card: 0 0% 100%;
+    --card-foreground: 240 27% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 27% 8%;
+    --primary: 240 60% 57%;          /* render indigo #5151d4 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 20% 96%;
+    --secondary-foreground: 240 27% 8%;
+    --muted: 240 20% 96%;
+    --muted-foreground: 240 8% 46%;  /* #6e6d7a */
+    --accent: 240 60% 57%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --border: 240 11% 90%;           /* #e4e4e9 */
+    --input: 240 11% 88%;
+    --ring: 240 60% 57%;
     --radius: 0.625rem;
-    --sidebar-background: 0 0% 5%;   /* #0d0d0d */
-    --sidebar-foreground: 220 9% 64%;
-    --sidebar-primary: 161 100% 43%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 13%;
-    --sidebar-ring: 161 100% 43%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 8% 46%;
+    --sidebar-primary: 240 60% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 20% 96%;
+    --sidebar-accent-foreground: 240 27% 8%;
+    --sidebar-border: 240 11% 90%;
+    --sidebar-ring: 240 60% 57%;
   }
 }
 
@@ -45,11 +44,6 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
-    font-feature-settings: 'ss01' on;
-    background-image:
-      radial-gradient(1000px 500px at 85% -10%, rgba(0, 217, 163, 0.05), transparent 60%),
-      radial-gradient(800px 500px at -10% 110%, rgba(0, 217, 163, 0.03), transparent 55%);
-    background-attachment: fixed;
   }
   .font-mono,
   code,
@@ -57,9 +51,8 @@
     font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   }
   ::selection {
-    background: rgba(0, 217, 163, 0.28);
+    background: rgba(81, 81, 212, 0.18);
   }
-  /* thin neutral scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -68,52 +61,52 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: #d4d4dc;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3d3d3d;
+    background: #b8b8c4;
   }
   :focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px rgba(0, 217, 163, 0.65);
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(81, 81, 212, 0.55);
     border-radius: 4px;
   }
 }
 
 @layer components {
   .panel {
-    @apply rounded-lg border bg-card;
+    @apply rounded-lg border bg-card shadow-[0_1px_2px_rgba(13,12,34,0.04)];
   }
   .panel-inset {
-    background: rgba(0, 0, 0, 0.45);
+    background: #0d0c22; /* code/console areas stay dark for legibility */
   }
   .label-tech {
     @apply font-mono uppercase text-muted-foreground;
     font-size: 10px;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
   }
   .text-glow {
-    text-shadow: 0 0 14px rgba(0, 217, 163, 0.35);
+    text-shadow: none;
   }
   .status-dot {
     @apply inline-block h-1.5 w-1.5 rounded-full;
   }
   .status-dot--live {
-    background: #00d9a3;
-    box-shadow: 0 0 7px rgba(0, 217, 163, 0.8);
+    background: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.18);
     animation: pulse-dot 1.6s ease-in-out infinite;
   }
   .status-dot--warn {
-    background: #f5a524;
-    box-shadow: 0 0 7px rgba(245, 165, 36, 0.6);
+    background: #d97706;
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.15);
   }
   .status-dot--down {
-    background: #e5484d;
-    box-shadow: 0 0 7px rgba(229, 72, 77, 0.6);
+    background: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
   }
   .status-dot--idle {
-    background: #3f3f46;
+    background: #b8b8c4;
   }
 }
 

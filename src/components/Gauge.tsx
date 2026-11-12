@@ -22,7 +22,7 @@ export function Gauge({ value, label, sub, size = 116 }: GaugeProps) {
         <svg width={size} height={size} className="-rotate-90">
           <circle
             cx={size / 2} cy={size / 2} r={r}
-            fill="none" stroke="#262626" strokeWidth={stroke}
+            fill="none" stroke="#e8e8ee" strokeWidth={stroke}
           />
           <circle
             cx={size / 2} cy={size / 2} r={r}
@@ -30,7 +30,7 @@ export function Gauge({ value, label, sub, size = 116 }: GaugeProps) {
             strokeLinecap="round"
             strokeDasharray={c}
             strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.6s ease', filter: `drop-shadow(0 0 6px ${color}66)` }}
+            style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.6s ease' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

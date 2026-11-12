@@ -5,14 +5,15 @@ import express from 'express';
 import { ensureLocalServer, listServers, getServer, addServer, removeServer } from './lib/store.js';
 import { runnerFor } from './lib/runners.js';
 import { getMetrics, listApps, appAction, getLogs, redeployApp, deployNewApp } from './lib/probes.js';
-import { login, logout, me, requireAuth } from './lib/auth.js';
+import { readAppEnv, writeAppEnv, listEnvFiles, listNginxConfigs, readNginxConfig, writeNginxConfig, reloadNginx } from './lib/files.js';
+import { login, logout, me, requireAuth, changePassword } from './lib/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = Number(process.env.PORT || 5101);
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '512kb' }));
 
 // security headers
 app.use((req, res, next) => {
@@ -27,13 +28,16 @@ ensureLocalServer();
 // ---------- auth ----------
 app.post('/api/auth/login', login);
 app.post('/api/auth/logout', logout);
+app.post('/api/auth/change-password', requireAuth, changePassword);
 app.get('/api/auth/me', requireAuth, me);
 
 // ---------- helpers ----------
 function withServer(req, res, fn) {
   const server = getServer(req.params.id, true);
   if (!server) return res.status(404).json({ error: 'Server not found' });
-  return fn(server, runnerFor(server));
+  return Promise.resolve(fn(server, runnerFor(server))).catch((err) => {
+    if (!res.headersSent) res.status(500).json({ error: String(err.message || err) });
+  });
 }
 
 function sse(res) {
@@ -112,6 +116,55 @@ app.get('/api/servers/:id/apps/:name/logs', requireAuth, asyncRoute(async (req, 
   withServer(req, res, async (server, runner) => {
     const logs = await getLogs(runner, req.params.name, req.query.lines);
     res.json({ logs });
+  });
+}));
+
+// ---------- app .env files ----------
+app.get('/api/servers/:id/apps/:name/env', requireAuth, asyncRoute(async (req, res) => {
+  const cwd = String(req.query.cwd || '');
+  const file = String(req.query.file || '.env');
+  withServer(req, res, async (server, runner) => {
+    res.json(await readAppEnv(runner, cwd, file));
+  });
+}));
+
+app.get('/api/servers/:id/apps/:name/env-files', requireAuth, asyncRoute(async (req, res) => {
+  const cwd = String(req.query.cwd || '');
+  withServer(req, res, async (server, runner) => {
+    res.json({ files: await listEnvFiles(runner, cwd) });
+  });
+}));
+
+app.put('/api/servers/:id/apps/:name/env', requireAuth, asyncRoute(async (req, res) => {
+  const { cwd, file = '.env', content = '' } = req.body || {};
+  withServer(req, res, async (server, runner) => {
+    res.json(await writeAppEnv(runner, String(cwd), String(file), content));
+  });
+}));
+
+// ---------- nginx configs ----------
+app.get('/api/servers/:id/nginx', requireAuth, asyncRoute(async (req, res) => {
+  withServer(req, res, async (server, runner) => {
+    res.json(await listNginxConfigs(runner));
+  });
+}));
+
+app.get('/api/servers/:id/nginx/:name', requireAuth, asyncRoute(async (req, res) => {
+  withServer(req, res, async (server, runner) => {
+    res.json(await readNginxConfig(runner, req.params.name));
+  });
+}));
+
+app.put('/api/servers/:id/nginx/:name', requireAuth, asyncRoute(async (req, res) => {
+  const { content = '' } = req.body || {};
+  withServer(req, res, async (server, runner) => {
+    res.json(await writeNginxConfig(runner, req.params.name, content));
+  });
+}));
+
+app.post('/api/servers/:id/nginx/reload', requireAuth, asyncRoute(async (req, res) => {
+  withServer(req, res, async (server, runner) => {
+    res.json(await reloadNginx(runner));
   });
 }));
 

@@ -17,6 +17,15 @@ with subscriptions. See **Roadmap** below.
 - **Server detail** — live metrics + pm2 process table with logs
   (auto-refreshing tail), restart / stop / start / delete, and one-click
   **redeploy** (git pull → npm install → pm2 restart, streaming output)
+- **Env editor** — per-app `.env` / `.env.local` / `.env.production` editing in
+  the browser; every save keeps a timestamped `.bak-*` backup, with an optional
+  **save & restart** so the change takes effect immediately
+- **Nginx editor** — browse `/etc/nginx/sites-available`, see which configs are
+  enabled and their `server_name`s, edit in place; saving runs `nginx -t`
+  first and **rolls back automatically** if the test fails, plus a one-click
+  nginx reload
+- **Settings** — change the admin password from the UI (survives restarts;
+  no need to touch `PANEL_PASSWORD` again)
 - **Deploy** — push a new app to any linked server from a GitHub repo with
   env vars, port and start command; streams the whole deploy log live
 
@@ -45,8 +54,12 @@ pm2 save
 
 The panel listens on port **5101** by default (override with `PORT=xxxx`).
 
-> The password is read when the process starts. To change it:
+> The password is read when the process starts. After first login you can
+> change it anytime in **Settings** — the new password is stored as a durable
+> scrypt hash in `data/auth.json` and survives restarts. You can also rotate
+> it from the shell:
 > `PANEL_PASSWORD='new-password' pm2 restart fleet-panel --update-env`
+> (the env value is only the bootstrap — a hash saved from Settings wins).
 
 ## Put it behind your domain (vps.taskpesa.site)
 
@@ -91,8 +104,11 @@ sudo certbot --nginx -d vps.taskpesa.site
 
 ## Security model
 
-- **Single strong admin password** (`PANEL_PASSWORD`), compared in constant
-  time; sessions are random 256-bit tokens in an HttpOnly cookie (12 h, rolling)
+- **Single strong admin password** (`PANEL_PASSWORD` bootstrap; after a
+  Settings change, a durable **scrypt hash** in `data/auth.json` takes
+  precedence), compared in constant time; sessions are random 256-bit tokens
+  in an HttpOnly cookie (12 h, rolling), and all other sessions are revoked
+  on password change
 - **Login rate limiting**: 5 attempts per IP per 5 minutes
 - **SSH secrets encrypted at rest** with AES-256-GCM; the key never leaves
   `data/.secret-key` (chmod 600) or your `PANEL_SECRET`
@@ -114,11 +130,31 @@ it's installed via nvm, volta, fnm or a user-local npm prefix.
 > Security tip: use a non-root sudo user on linked machines, and restrict
 > port 22 to your own IPs in the firewall where possible.
 
+## Editing nginx configs from the panel
+
+The nginx editor writes to `/etc/nginx/sites-available/`, runs `nginx -t`, and
+reloads nginx. The panel process (your login user) needs permission for that.
+One-time setup on each managed VPS:
+
+```bash
+# let your user edit the config files directly
+sudo chown -R $USER /etc/nginx/sites-available
+
+# allow passwordless nginx test + reload only
+echo "$USER ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t, /usr/sbin/nginx -s reload, /bin/systemctl reload nginx" \
+  | sudo tee /etc/sudoers.d/fleet-panel
+```
+
+Without this, saving a config shows the exact commands to run and changes
+nothing. If your nginx lives somewhere other than `/etc/nginx`, set
+`NGINX_ROOT=/path/to/nginx` when starting the panel.
+
 ## Where data lives
 
 ```
 data/servers.json   # linked servers (secrets AES-256-GCM encrypted)
 data/.secret-key    # encryption key (auto-generated, chmod 600)
+data/auth.json      # admin password hash (created when you change it in Settings)
 ```
 
 Created on first run next to the project. Back them up if you rebuild the
@@ -152,6 +188,7 @@ The codebase is structured so each step lands without rewrites:
 | `PANEL_SECRET`    | no       | auto    | passphrase deriving the encryption key |
 | `PANEL_DATA_DIR`  | no       | `./data`| where servers.json + key are stored    |
 | `LOCAL_SERVER_NAME` | no     | `This VPS (local)` | display name of the host server |
+| `NGINX_ROOT`      | no       | `/etc/nginx` | nginx root for the config editor   |
 
 ## Development
 

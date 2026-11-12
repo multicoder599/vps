@@ -23,7 +23,7 @@ export function Sparkline({ samples, height = 72 }: SparklineProps) {
     ctx.clearRect(0, 0, w, h);
 
     // grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.strokeStyle = 'rgba(13, 12, 34, 0.07)';
     ctx.lineWidth = 1;
     for (let i = 1; i < 4; i += 1) {
       const y = (h / 4) * i;
@@ -46,26 +46,23 @@ export function Sparkline({ samples, height = 72 }: SparklineProps) {
     ctx.lineTo(x(slice.length - 1), h);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(0, 217, 163, 0.18)');
-    grad.addColorStop(1, 'rgba(0, 217, 163, 0)');
+    grad.addColorStop(0, 'rgba(81, 81, 212, 0.14)');
+    grad.addColorStop(1, 'rgba(81, 81, 212, 0)');
     ctx.fillStyle = grad;
     ctx.fill();
 
     // line
     ctx.beginPath();
     slice.forEach((v, i) => (i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v))));
-    ctx.strokeStyle = '#00d9a3';
+    ctx.strokeStyle = '#5151d4';
     ctx.lineWidth = 1.5;
-    ctx.shadowColor = 'rgba(0, 217, 163, 0.6)';
-    ctx.shadowBlur = 6;
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
     // head dot
     const last = slice[slice.length - 1];
     ctx.beginPath();
     ctx.arc(x(slice.length - 1), y(last), 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#00d9a3';
+    ctx.fillStyle = '#5151d4';
     ctx.fill();
   }, [samples, height]);
 

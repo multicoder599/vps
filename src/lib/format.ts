@@ -28,9 +28,9 @@ export function percent(used: number, total: number): number {
 
 /** Color for a 0-100 utilization value — green → amber → red. */
 export function loadColor(p: number): string {
-  if (p >= 85) return '#e5484d';
-  if (p >= 60) return '#f5a524';
-  return '#00d9a3';
+  if (p >= 85) return '#dc2626';
+  if (p >= 60) return '#d97706';
+  return '#16a34a';
 }
 
 export function statusKind(status: string): 'live' | 'warn' | 'down' | 'idle' {

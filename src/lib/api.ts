@@ -1,4 +1,4 @@
-import type { DeployRequest, Overview, ServerInfo } from '@/types';
+import type { DeployRequest, NginxFileInfo, Overview, ServerInfo } from '@/types';
 import {
   demoApps,
   demoAppsRemote,
@@ -92,6 +92,15 @@ export async function checkAuth(): Promise<boolean> {
   }
 }
 
+export async function changePassword(current: string, next: string): Promise<void> {
+  try {
+    await req('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ current, next }) });
+  } catch (err) {
+    if (err instanceof DemoFallback) return;
+    throw err;
+  }
+}
+
 // ---------- servers ----------
 
 export async function getServers(): Promise<ServerInfo[]> {
@@ -173,6 +182,108 @@ export async function getLogs(serverId: string, name: string, lines = 200): Prom
     return data.logs;
   } catch (err) {
     if (err instanceof DemoFallback) return demoLogs;
+    throw err;
+  }
+}
+
+// ---------- app .env ----------
+
+export interface EnvFile {
+  exists: boolean;
+  path: string;
+  content: string;
+}
+
+export async function readEnv(serverId: string, name: string, cwd: string, file = '.env'): Promise<EnvFile> {
+  try {
+    return await req<EnvFile>(`/api/servers/${serverId}/apps/${encodeURIComponent(name)}/env?cwd=${encodeURIComponent(cwd)}&file=${encodeURIComponent(file)}`);
+  } catch (err) {
+    if (err instanceof DemoFallback) {
+      return {
+        exists: true,
+        path: `${cwd}/${file}`,
+        content: 'PORT=4061\nMONGO_URI=mongodb://127.0.0.1:27017/oddsxpess\nNODE_ENV=production\nMEGAPAY_KEY=••••••••••••\nJWT_SECRET=••••••••••••••••\n',
+      };
+    }
+    throw err;
+  }
+}
+
+export async function listEnvFiles(serverId: string, name: string, cwd: string): Promise<string[]> {
+  try {
+    const data = await req<{ files: string[] }>(`/api/servers/${serverId}/apps/${encodeURIComponent(name)}/env-files?cwd=${encodeURIComponent(cwd)}`);
+    return data.files;
+  } catch (err) {
+    if (err instanceof DemoFallback) return ['.env', '.env.production'];
+    throw err;
+  }
+}
+
+export async function writeEnv(serverId: string, name: string, cwd: string, file: string, content: string): Promise<{ message: string }> {
+  try {
+    return await req<{ message: string }>(`/api/servers/${serverId}/apps/${encodeURIComponent(name)}/env`, {
+      method: 'PUT',
+      body: JSON.stringify({ cwd, file, content }),
+    });
+  } catch (err) {
+    if (err instanceof DemoFallback) return { message: 'saved (demo)' };
+    throw err;
+  }
+}
+
+// ---------- nginx ----------
+
+export async function listNginx(serverId: string): Promise<{ nginx: boolean; files: NginxFileInfo[]; root?: string }> {
+  try {
+    return await req(`/api/servers/${serverId}/nginx`);
+  } catch (err) {
+    if (err instanceof DemoFallback) {
+      return {
+        nginx: true,
+        root: '/etc/nginx/sites-available',
+        files: [
+          { name: 'api.oddsxpess.com', enabled: true, domains: 'api.oddsxpess.com' },
+          { name: 'oddsxpess.com', enabled: true, domains: 'oddsxpess.com www.oddsxpess.com' },
+          { name: 'vps.taskpesa.site', enabled: true, domains: 'vps.taskpesa.site' },
+          { name: 'staging.old-site', enabled: false, domains: 'staging.example.com' },
+        ],
+      };
+    }
+    throw err;
+  }
+}
+
+export async function readNginx(serverId: string, name: string): Promise<{ path: string; content: string }> {
+  try {
+    return await req(`/api/servers/${serverId}/nginx/${encodeURIComponent(name)}`);
+  } catch (err) {
+    if (err instanceof DemoFallback) {
+      return {
+        path: `/etc/nginx/sites-available/${name}`,
+        content: `server {\n    listen 80;\n    server_name ${name};\n\n    location / {\n        proxy_pass http://127.0.0.1:4061;\n        proxy_http_version 1.1;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    }\n}\n`,
+      };
+    }
+    throw err;
+  }
+}
+
+export async function writeNginx(serverId: string, name: string, content: string): Promise<{ message: string }> {
+  try {
+    return await req<{ message: string }>(`/api/servers/${serverId}/nginx/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  } catch (err) {
+    if (err instanceof DemoFallback) return { message: 'saved and nginx -t passed (demo)' };
+    throw err;
+  }
+}
+
+export async function reloadNginx(serverId: string): Promise<{ message: string }> {
+  try {
+    return await req<{ message: string }>(`/api/servers/${serverId}/nginx/reload`, { method: 'POST', body: '{}' });
+  } catch (err) {
+    if (err instanceof DemoFallback) return { message: 'nginx reloaded (demo)' };
     throw err;
   }
 }

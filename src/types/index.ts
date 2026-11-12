@@ -57,3 +57,9 @@ export interface DeployRequest {
   env: EnvVar[];
   startCmd: string;
 }
+
+export interface NginxFileInfo {
+  name: string;
+  enabled: boolean;
+  domains: string;
+}
